@@ -172,46 +172,52 @@ int main(void)
 		//*** START Ultrasonic measure routine ***//
 		//1. Output 10 usec TRIG
 		HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_SET);
-		usDelay(10);
+		usDelay(50);
 		HAL_GPIO_WritePin(TRIG_GPIO_Port, TRIG_Pin, GPIO_PIN_RESET);
 		
-		//2. Wait for ECHO pin rising edge
-		while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET);
+	
 		
+		//2. Wait for ECHO pin rising edge
+	
+		int counter = 0;
+    bool receivedResponse = true;
+    while (HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_RESET){
+        if(counter < 3){
+          counter++;
+          continue;
+        }
+        receivedResponse = false;
+        break;
+    };
+
+    if(!receivedResponse){
+      continue;
+    }
+		
+
 		//3. Start measuring ECHO pulse width in usec
 		numTicks = 0;
 		while(HAL_GPIO_ReadPin(ECHO_GPIO_Port, ECHO_Pin) == GPIO_PIN_SET)
 		{
 			numTicks++;
 			usDelay(2); //2.8usec
+			
 		};
 		
 		//4. Estimate distance in cm
 		float num=numTicks;
 		distance=(num*2.8*speedOfSound)/2;
-		distance_buff[brojac]=distance;
 		//5. Print to UART terminal for debugging
 		sprintf(uartBuf, "Nivo vode (cm)  = %.1f\r\n", visina_kanistera-distance);
 		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
 		
-		/*sprintf(uartBuf, "nivoa (cm)  = %.1f\r\n", distance);
-		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);*/
+	
 		 //lcd16x2_printf( "Nivo vode (cm)  = %.1f", visina_kanistera-distance);
 		//lcd16x2_clear();
-	
-		medium_distance+=distance_buff[brojac];
-		if(brojac==4)
-		{ //Estimator usrednjenje vrijednosti
-		medium_distance=medium_distance/5;
-		sprintf(uartBuf, "Srednja vrijednost nivoa (cm)  = %.1f\r\n", visina_kanistera-medium_distance);
-		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
-			
-		/*	sprintf(uartBuf, "Srednja vrijednost nivoa (cm)  = %.1f\r\n", medium_distance);
-		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);*/
-		/*	lcd16x2_printf("Srednja vrijednost nivoa (cm)= %.1f", visina_kanistera-medium_distance);
-			lcd16x2_clear();*/
-	   	if((visina_kanistera-medium_distance)>=visina_kanistera-max_distance){
+
+			if((visina_kanistera-distance)>=visina_kanistera-max_distance){
 	   	//Ukljucivanje dioda
+				
 			HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_SET);
 			HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_SET);
 			HAL_GPIO_WritePin(LED3_GPIO_Port,LED3_Pin,GPIO_PIN_SET);
@@ -221,11 +227,13 @@ int main(void)
 			 htim8.Instance->CCR1=240;
 				
 			//Pokretanje servo motora
-	      htim3.Instance->CCR1=75;  // 90 stepeni 
+	      htim3.Instance->CCR1=75;  // 90 stepeni }
 		}
-			if((visina_kanistera-medium_distance)<=visina_kanistera-min_distance){
+		
+			if((visina_kanistera-distance)<=visina_kanistera-min_distance){
 			 //Pokretanje servo motora
-		    htim3.Instance->CCR1=125; //0 stepeni
+				
+		    htim3.Instance->CCR1=125; //180 stepeni
 				//Iskljucivanje dioda
 			HAL_GPIO_WritePin(LED1_GPIO_Port,LED1_Pin,GPIO_PIN_RESET);
 			HAL_GPIO_WritePin(LED2_GPIO_Port,LED2_Pin,GPIO_PIN_RESET);
@@ -234,22 +242,18 @@ int main(void)
 				//Iskljucivanje zvucnika 
 				 htim8.Instance->CCR1=0;
 		}
-			
-		  medium_distance=0;
-		 // brojac=0;
-		}
 		
-		++brojac;
-		if(brojac==5){
-			brojac=0;}
-		HAL_Delay(500);
+		  
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		   
+		   delay_ms_soft(2000);
   }
-  /* USER CODE END 3 */
+	        sprintf(uartBuf, "Program terminirao\n");
+		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
 }
+  /* USER CODE END 3 */
+
 
 /**
   * @brief System Clock Configuration
