@@ -45,7 +45,7 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include "usart.h"
+//#include "usart.h"
 #include "lcd16x2.h"
 
 /* USER CODE END Includes */
@@ -98,15 +98,12 @@ static void MX_TIM8_Init(void);
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
 const float speedOfSound =0.0343; //mikrosec po cm 
-float distance;
-
-float distance_buff[5]; // vrijednosti udaljenosti sprema u niz, koristenje za estimator srednje vrijednosti
-uint16_t brojac=0;         // Kada dodje do 5 ispisat ce vrijednost udaljenosti
-float min_distance=20;      // Minimalna visina vode u rezervoaru koja je potrebna da bi se senzor ukljucio i zatvorio ventil, vrijednost je u cm
+float distance;                 //Udaljenost senzora od površine tecnosti
+float min_distance=20;      // Minimalna visina vode u rezervoaru koja je potrebna da bi se senzor ukljucio i zatvorio ventil, 
+                            //vrijednost je u cm
 float max_distance=7;    //Maximalna visina rezervoara vrijednost u cm, otvara se ventil kada udaljenost bude jednaka ovoj
 char uartBuf[100];
-float medium_distance=0;
-float visina_kanistera=26;
+float visina_kanistera=26; //Visina na kojoj se senzor nalazi
 
 /* USER CODE END 0 */
 
@@ -249,7 +246,7 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		   delay_ms_soft(2000);
   }
-	        sprintf(uartBuf, "Program terminirao\n");
+	  sprintf(uartBuf, "Program terminirao\n");
 		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
 }
   /* USER CODE END 3 */
@@ -594,14 +591,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_PIN)
 	{ 
 		sprintf(uartBuf, "USER_MODE_Activated\n"); //ovo neka stoji ako lcd ne bude radio hihih
 		HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);
-		//lcd16x2_printf("Interupt radi"); //provjera 
+	
 		     //Pokretanje zvucnika
 		    htim8.Instance->CCR1=240;
 		    //Pokretanje servo motora
 			  HAL_TIM_PWM_Start(&htim3,TIM_CHANNEL_1);
 	     	htim3.Instance->CCR1=75; //90 stepeni
-			/*	sprintf(uartBuf, "interupt radi\n");
-	    	HAL_UART_Transmit(&huart2, (uint8_t *)uartBuf, strlen(uartBuf), 100);*/
 	//   	lcd16x2_printf("INTERUPT RADI");
 
 		    delay_ms_soft(500); //Korisnicki definisan delay, upotrebom HAL_Delay() funkcije program terminira
